@@ -3,6 +3,8 @@
 //2. longest common subsequence of two strings
 //3. edit distance
 //4. KMP algorithm
+//5. Rabin-Karp algorithm
+//6. 
 
 public class Main {
     //1. distinct permutations of a string
@@ -90,11 +92,43 @@ public class Main {
     }
     
     //4. KMP algorithm for pattern searching
+    //find the longest proper prefix that is also a suffix of the pattern
+    public static void find_lps(String pattern, int m, int[] lps) {
+        int k = 0;
+        //j: upto which number is the loop currently calculating lps for
+        //k: how many characters in sub pattern is matched
+        for (int j = 1; j < m; j++) {
+            while (k > 0 && pattern.charAt(k) != pattern.charAt(j))
+                k = lps[k - 1];
+            if (pattern.charAt(k) == pattern.charAt(j))
+                k++;
+            lps[j] = k;
+        }
+    }
     
+    public static void KMP(String pattern, String text) {
+        int m = pattern.length(), n = text.length();
+        int[] lps = new int[m];
+        find_lps(pattern, m, lps);
+        int j = 0;
+        //i: upto which character in text to compare
+        //j: how many characters in pattern is matched
+        for (int i = 0; i < n; i++) {
+            while (j > 0 && pattern.charAt(j) != text.charAt(i))
+                j = lps[j - 1];
+            if (pattern.charAt(j) == text.charAt(i))
+                j++;
+            if (j == m) {
+                System.out.println(i - j + 1);
+                j = lps[j - 1];
+            }
+        }
+    }
     
     public static void main(String[] args) {
         //permutation("aab", "");
         //lcs("abcabcaa", "acbacba");
         //System.out.println(edit_distance("sunday", "saturday", 6, 8));
+        //KMP("ABABCABAB", "ABABDABACDABABCABABABABCABABCABAB");
     }
 }
