@@ -517,6 +517,8 @@ public class Graph {
             int min_idx = cur.vertex, min_dist = cur.distance;
             if (min_dist > dist[min_idx])
                 continue;
+            if (min_idx == w)
+                return min_dist;
             for (VNode i : list_edges_nodes.get(min_idx)) {
                 int next = i.vertex, next_d = i.distance;
                 if (dist[min_idx] + next_d < dist[next]) {
@@ -529,9 +531,36 @@ public class Graph {
     }
     
     // 14. Bellman-Ford Algorithm
-    // 
+    // detects negative cycle and returns -1, otherwise return shortest distance
+    // go through each edge updating the second vertex's distance, repeat nV - 1 times
+    // if there is still a shorter path, then there is a negative weight cycle
     public static int BellmanFord(int v, int w) {
-        return 0;
+        int[] dist = new int[nV];
+        for (int i = 0; i < nV; i++)
+            dist[i] = Integer.MAX_VALUE;
+        dist[v] = 0;
+        
+        for (int j = 1; j < nV; j++) {
+            for (int v1 = 0; v1 < edges.size(); v1++) {
+                for (int i = 0; i < edges.get(v1).size(); i++) {
+                    int v2 = edges.get(v1).get(i);
+                    int wei = weights.get(v1).get(i);
+                    if (dist[v1] != Integer.MAX_VALUE && dist[v1] + wei < dist[v2])
+                        dist[v2] = dist[v1] + wei;
+                }
+            }
+        }
+        
+        for (int v1 = 0; v1 < edges.size(); v1++) {
+            for (int i = 0; i < edges.get(v1).size(); i++) {
+                int v2 = edges.get(v1).get(i);
+                int wei = weights.get(v1).get(i);
+                if (dist[v1] != Integer.MAX_VALUE && dist[v1] + wei < dist[v2])
+                    return -1;
+            }
+        }
+        
+        return dist[w];
     }
     
     public static void main(String[] args) {
@@ -552,6 +581,6 @@ public class Graph {
         g.addEdgeWeighted(1,3,2);
         g.addEdgeWeighted(2,3,5);
         g.addEdgeWeighted(4,3,6);
-        System.out.println(DijkstraPriorityQueue(2,4));
+        System.out.println(BellmanFord(2,4));
     }
 }
