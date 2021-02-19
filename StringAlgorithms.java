@@ -4,7 +4,11 @@
 //3. edit distance
 //4. KMP algorithm
 //5. Rabin-Karp algorithm
-//6. 
+//6. Finite Automata algorithm
+//7. Boyer Moore algorithm
+//8. if a string is a rotation of another string
+//9. shortest substring containing all characters of another string
+//10. longest palindromic substring
 
 public class Main {
     //1. distinct permutations of a string
@@ -125,10 +129,194 @@ public class Main {
         }
     }
     
+    //5. Rabin-Karp algorithm: calculate hash value and compare
+    public static int d = 26; //number of characters in the alphabet of string
+    public static int q = 101; //a prime number
+    
+    public static void RabinKarp(String pattern, String text) {
+        int m = pattern.length(), n = text.length();
+        int p = 0, t = 0, h = 1;
+        
+        for (int i = 0; i < m - 1; i++)
+            h = (h * d) % q;
+        
+        for (int i = 0; i < m; i++) {
+            p = (d * p + pattern.charAt(i)) % q;
+            t = (d * t + text.charAt(i)) % q;
+        }
+        
+        for (int i = 0; i <= n - m; i++) {
+            if (p == t) {
+                int j;
+                for (j = 0; j < m; j++) {
+                    if (pattern.charAt(j) != text.charAt(i + j))
+                        break;
+                }
+                if (j == m)
+                    System.out.println(i);
+            }
+            if (i < n - m) {
+                t = (d * (t - text.charAt(i) * h) + (text.charAt(i + m))) % q;
+                if (t < 0)
+                    t += q;
+            }
+        }
+    }
+    
+    //6. Finite Automata algorithm
+    //meaning of the tf 2d array:
+    //if (state) number of characters in the pattern are matched right now
+    //how many characters will be matched after adding (x) at the end
+    public static int getState(String pattern, int m, int state, int x) {
+        if (state < m && x == pattern.charAt(state))
+            return state + 1;
+        for (int j = state; j > 0; j--) {
+            if (pattern.charAt(j - 1) == x) {
+                int i;
+                for (i = 0; i < j - 1; i++) {
+                    if (pattern.charAt(i) != pattern.charAt(state - j + 1 + i))
+                        break;
+                }
+                if (i == j - 1)
+                    return j;
+            }
+        }
+        return 0;
+    }
+    
+    public static void FiniteAutomata(String pattern, String text) {
+        int m = pattern.length(), n = text.length();
+        int[][] tf = new int[m + 1][256];
+        
+        for (int state = 0; state <= m; state++) {
+            for (int x = 0; x < 256; x++) {
+                tf[state][x] = getState(pattern, m, state, x);
+            }
+        }
+        //state is how many characters match the pattern
+        int state = 0;
+        for (int i = 0; i < n; i++) {
+            state = tf[state][text.charAt(i)];
+            if (state == m)
+                System.out.println(i - m + 1);
+        }
+    }
+    
+    //7. Boyer Moore algorithm
+    public static void BoyerMoore(String pattern, String text) {
+        int m = pattern.length(), n = text.length();
+        //stores position of last occurrence of each character in the pattern string
+        int last[] = new int[256];
+        for (int i = 0; i < 256; i++)
+            last[i] = -1;
+        for (int i = 0; i < m; i++)
+            last[pattern.charAt(i)] = i;
+        //s is which character is being looked at (as start of pattern) in the text
+        //once s is set, start comparing from the last character of the pattern
+        int s = 0;
+        while (s <= n - m) {
+            int j = m - 1;
+            while (j >= 0 && pattern.charAt(j) == text.charAt(s + j))
+                j--;
+            if (j < 0) {
+                System.out.println(s);
+                s += (s < n - m) ? m - last[text.charAt(s + m)] : 1;
+            }
+            else
+                s += Math.max(1, j - last[text.charAt(s + j)]);
+        }
+    }
+    
+    //8. find if a string is a rotation of another string using lps from KMP
+    public static boolean isRotation(String a, String b) {
+        int m = a.length();
+        if (m != b.length())
+            return false;
+        int[] lps = new int[m];
+        int k = 0;
+        //k is how many characters are matched for prefix/suffix
+        //j is up to which character is the loop calculating lps for
+        for (int j = 1; j < m; j++) {
+            while (k > 0 && a.charAt(j) != b.charAt(k))
+                k = lps[k - 1];
+            if (a.charAt(j) == b.charAt(k))
+                k++;
+            lps[j] = k;
+        }
+        for (int i = lps[m - 1], j = 0; i < m; i++, j++) {
+            if (a.charAt(j) != b.charAt(i))
+                return false;
+        }
+        return true;
+    }
+    
+    //9. find the shortest substring of a string that contains all characters of another string
+    public static String shortestSubstring(String text, String pattern) {
+        int n = text.length(), m = pattern.length();
+        if (n < m)
+            return "";
+        int[] pattern_hash = new int[256];
+        int[] text_hash = new int[256];
+        for (int i = 0; i < m; i++)
+            pattern_hash[pattern.charAt(i)]++;
+        int count = 0, start = 0, min_idx = -1, min_len = Integer.MAX_VALUE;
+        for (int i = 0; i < n; i++) {
+            int index = text.charAt(i);
+            text_hash[index]++;
+            //this is when the ith character of text is not extra, it is useful as part of pattern
+            if (text_hash[index] <= pattern_hash[index])
+                count++;
+            if (count == m) {
+                while (text_hash[text.charAt(start)] > pattern_hash[text.charAt(start)] || pattern_hash[text.charAt(start)] == 0) {
+                    if (text_hash[text.charAt(start)] > pattern_hash[text.charAt(start)])
+                        text_hash[text.charAt(start)]--;
+                    start++;
+                }
+                if (i - start + 1 < min_len) {
+                    min_len = i - start + 1;
+                    min_idx = start;
+                }
+            }
+        }
+        if (min_idx == -1)
+            return "";
+        return text.substring(min_idx, min_idx + min_len);
+    }
+    
+    //10. find the longest substring of a string that is a palindrome
+    public static int longestPalindromeFromCentre(String s, int l, int c1, int c2) {
+        int i = c1, j = c2;
+        while (i >= 0 && j < l && s.charAt(i) == s.charAt(j)) {
+            i--;
+            j++;
+        }
+        return j - i - 1;
+    }
+    
+    public static String longestPalindromicSubstring(String s) {
+        int l = s.length(), start = 0, end = 0;
+        for (int i = 0; i < l; i++) {
+            int m1 = longestPalindromeFromCentre(s, l, i, i);
+            int m2 = longestPalindromeFromCentre(s, l, i, i + 1);
+            int m = Math.max(m1, m2);
+            if (end - start + 1 < m) {
+                start = i - (m - 1) / 2;
+                end = i + m / 2;
+            }
+        }
+        return s.substring(start, end + 1);
+    }
+    
     public static void main(String[] args) {
         //permutation("aab", "");
         //lcs("abcabcaa", "acbacba");
         //System.out.println(edit_distance("sunday", "saturday", 6, 8));
         //KMP("ABABCABAB", "ABABDABACDABABCABABABABCABABCABAB");
+        //RabinKarp("ABABCABAB", "ABABDABACDABABCABABABABCABABCABAB");
+        //System.out.println(isRotation("abcdefghijklmnopqz", "klmnopqyabcdefghij"));
+        //FiniteAutomata("acacaga", "acacagacacaga");
+        //BoyerMoore("acacaga", "acacagacacaga");
+        //System.out.println(shortestSubstring("akjfkjeajkfhiewfehifejfahijfehfcccaddfdvdvvdccdb", "abccddd"));
+        //System.out.println(longestPalindromicSubstring("aaabbbccccdccccbbbvvv"));
     }
 }
