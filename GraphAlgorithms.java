@@ -13,6 +13,8 @@
 // 12. Dijkstra's shortest path algorithm (weighted)
 // 13. Dijkstra's shortest path algorithm with priority queue (weighted)
 // 14. Bellman-Ford algorithm (negatively weighted)
+// 15. Hamiltonian cycle
+// 16. Travelling Salesman Problem
 
 
 // adjacency list representation of graph with an ArrayList of ArrayLists, can be directed, undirected or weighted
@@ -563,24 +565,109 @@ public class Graph {
         return dist[w];
     }
     
+    // 15. Hamiltonian cycle
+    static int[] path;
+    //check if v can be added to the constructed cycle of length n
+    public static boolean canAdd(int v, int n) {
+        if (!edges.get(path[n - 1]).contains(v))
+            return false;
+        for (int i = 0; i < n; i++) {
+            if (path[i] == v)
+                return false;
+        }
+        return true;
+    }
+    
+    //n is the number of vertices in the cycle
+    //recursively add one vertex at a time
+    public static boolean isHamiltonianCycle(int n) {
+        if (n == nV)
+            return edges.get(path[n - 1]).contains(path[0]);
+        for (int i = 1; i < nV; i++) {
+            if (canAdd(i, n)) {
+                path[n] = i;
+                if (isHamiltonianCycle(n + 1))
+                    return true;
+                path[n] = -1;
+            }
+        }
+        return false;
+    }
+    
+    public static boolean hamiltonianCycle() {
+        path = new int[nV];
+        for (int i = 0; i < nV; i++)
+            path[i] = -1;
+        path[0] = 0;
+        return isHamiltonianCycle(1);
+    }
+    
+    // 16. Travelling Salesman Problem
+    // there is an edge (weighted, undirected) between every pair of vertices
+    // find the cost of the hamilton cycle with the lowest cost
+    // at the start of each backtrack step, cur is the newly added vertex, count is the number of vertices in path, cost is the newly added weight (by adding cur), res is the minimum discovered up to now (before adding cur)
+    // at the end of each backtrack step, res is updated to the minimum discovered after adding cur
+    public static int TSP_backtrack(boolean[] visited, int cur, int count, int cost, int res) {
+        //all vertices in path
+        if (count == nV && edges.get(cur).contains(0)) {
+            res = Math.min(res, cost + weights.get(cur).get(0));
+            return res;
+        }
+        for (int j = 0; j < edges.get(cur).size(); j++) {
+            int i = edges.get(cur).get(j);
+            if (!visited[i]) {
+                visited[i] = true;
+                res = TSP_backtrack(visited, i, count + 1, cost + weights.get(cur).get(j), res);
+                visited[i] = false;
+            }
+        }
+        return res;
+    }
+    
+    public static int TSP() {
+        boolean[] visited = new boolean[nV];
+        visited[0] = true;
+        int res = Integer.MAX_VALUE;
+        return TSP_backtrack(visited, 0, 1, 0, res);
+    }
+    
     public static void main(String[] args) {
-        Graph g = new Graph(5, true);
-        /*g.addEdge(0,1,false);
+        //example of an unweighted, undirected graph
+        /*Graph g = new Graph(5, false);
+        g.addEdge(0,1,false);
         g.addEdge(1,2,false);
-        g.addEdge(1,3,false);
+        g.addEdge(0,3,false);
         g.addEdge(2,4,false);
-        g.addEdge(3,5,false);*/
-        /*g.addEdge(0,0,true);
+        g.addEdge(1,3,false);
+        g.addEdge(1,4,false);*/
+        
+        //example of an unweighted, directed graph
+        /*Graph g = new Graph(4, false);
+        g.addEdge(0,0,true);
         g.addEdge(1,2,true);
         g.addEdge(1,3,true);
         g.addEdge(2,3,true);
         g.addEdge(3,0,true);*/
-        //g.print();
-        g.addEdgeWeighted(1,4,6);
-        g.addEdgeWeighted(2,1,5);
-        g.addEdgeWeighted(1,3,2);
-        g.addEdgeWeighted(2,3,5);
-        g.addEdgeWeighted(4,3,6);
-        System.out.println(BellmanFord(2,4));
+        
+        //example of a weighted, undirected graph
+        Graph g = new Graph(4, true);
+        g.addEdgeWeighted(0,0,0);
+        g.addEdgeWeighted(0,1,10);
+        g.addEdgeWeighted(0,2,15);
+        g.addEdgeWeighted(0,3,20);
+        g.addEdgeWeighted(1,0,10);
+        g.addEdgeWeighted(1,1,0);
+        g.addEdgeWeighted(1,2,35);
+        g.addEdgeWeighted(1,3,25);
+        g.addEdgeWeighted(2,0,15);
+        g.addEdgeWeighted(2,1,35);
+        g.addEdgeWeighted(2,2,0);
+        g.addEdgeWeighted(2,3,30);
+        g.addEdgeWeighted(3,0,20);
+        g.addEdgeWeighted(3,1,25);
+        g.addEdgeWeighted(3,2,30);
+        g.addEdgeWeighted(3,3,0);
+        
+        System.out.println(TSP());
     }
 }
